@@ -1,170 +1,82 @@
-<!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Notion Lunar Calendar Widget</title>
-
-<style>
-:root{
-  --accent:#111;
-  --muted:#888;
-  --event:#ff4d4f;
-  --lunar:#999;
-  --header-bg: var(--accent);
-  --header-text: #fff;
-}
-
-body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
-.calendar{width:100%;padding:4%;box-sizing:border-box;}
-
-.header{
-  background:var(--header-bg);
-  color:var(--header-text);
-  border-radius:12px;
-  padding:10px 12px;
-  margin-bottom:8px;
-}
-
-.month-row{display:flex;justify-content:space-between;align-items:center;}
-.title{font-weight:600;font-size:clamp(14px,2.5vw,20px);}
-.today-line{font-size:clamp(11px,2.2vw,13px);opacity:.85;}
-
-.nav button, .settings-btn{
-  background:none;border:none;color:inherit;
-  font-size:clamp(16px,3vw,22px);cursor:pointer;
-}
-
-.settings-panel{
-  display:none;
-  margin-top:8px;
-  font-size:12px;
-}
-.settings-panel input{margin-top:4px;}
-
-.weekdays,.days{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;}
-.weekdays div{font-size:clamp(10px,2vw,12px);color:var(--muted);margin-bottom:4px;}
-
-.day{
-  aspect-ratio:1/1;
-  display:flex;flex-direction:column;
-  align-items:center;justify-content:center;
-  border-radius:10px;
-  font-size:clamp(12px,2.5vw,16px);
-  position:relative;padding-top:2px;
-}
-.lunar{font-size:clamp(9px,1.8vw,11px);color:var(--lunar);}
-.today{background:var(--accent);color:#fff;font-weight:bold;}
-.festival{color:var(--event);font-weight:600;}
-</style>
-</head>
-
-<body>
-<div class="calendar">
-  <div class="header">
-    <div class="month-row">
-      <button class="nav" onclick="changeMonth(-1)">‹</button>
-      <div class="title" id="monthYear"></div>
-      <div>
-        <button class="settings-btn" onclick="toggleSettings()">⚙</button>
-        <button class="nav" onclick="changeMonth(1)">›</button>
-      </div>
-    </div>
-    <div class="today-line" id="todayLine"></div>
-
-    <div class="settings-panel" id="settingsPanel">
-      表頭顏色：
-      <input type="color" id="colorPicker" onchange="changeThemeColor(this.value)">
-    </div>
-  </div>
-
-  <div class="weekdays">
-    <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
-  </div>
-  <div class="days" id="calendarDays"></div>
-</div>
-
 <script>
-// ===== 主題色設定 =====
-function toggleSettings(){
-  const panel=document.getElementById("settingsPanel");
-  panel.style.display=panel.style.display==="block"?"none":"block";
+let current = new Date();
+
+/* ===== 台灣國定假日（固定國曆）===== */
+function getTaiwanHolidays(year){
+  return {
+    `${year}-1-1`:"元旦",
+    `${year}-2-28`:"和平紀念日",
+    `${year}-4-4`:"兒童節",
+    `${year}-10-10`:"國慶日"
+  };
 }
 
-function changeThemeColor(color){
-  document.documentElement.style.setProperty('--accent', color);
-  document.documentElement.style.setProperty('--header-bg', color);
-  localStorage.setItem("calendarThemeColor", color);
-}
+/* ===== 農曆節日（只顯示，不標紅）===== */
+const lunarFestivals={
+  "1-1":"春節",
+  "1-15":"元宵",
+  "5-5":"端午",
+  "7-7":"七夕",
+  "8-15":"中秋",
+  "9-9":"重陽"
+};
 
-(function loadSavedColor(){
-  const saved=localStorage.getItem("calendarThemeColor");
-  if(saved){
-    document.documentElement.style.setProperty('--accent', saved);
-    document.documentElement.style.setProperty('--header-bg', saved);
-  }
-})();
-
-// ===== 月曆邏輯 =====
-let current=new Date();
-
-const solarFestivals={"1-1":"元旦","2-14":"情人節","12-25":"聖誕節","10-10":"國慶日"};
-const lunarFestivals={"1-1":"春節","1-15":"元宵","5-5":"端午","7-7":"七夕","8-15":"中秋","9-9":"重陽","12-8":"臘八"};
 const lunarDayNames=["初一","初二","初三","初四","初五","初六","初七","初八","初九","初十",
 "十一","十二","十三","十四","十五","十六","十七","十八","十九","二十",
 "廿一","廿二","廿三","廿四","廿五","廿六","廿七","廿八","廿九","三十"];
 
-//（農曆演算法同前版，略）
-const lunarInfo=[0x04bd8,0x04ae0,0x0a570,0x054d5,0x0d260,0x0d950,0x16554,0x056a0,0x09ad0,0x055d2,
-0x04ae0,0x0a5b6,0x0a4d0,0x0d250,0x1d255,0x0b540,0x0d6a0,0x0ada2,0x095b0,0x14977,
-0x04970,0x0a4b0,0x0b4b5,0x06a50,0x06d40,0x1ab54,0x02b60,0x09570,0x052f2,0x04970,
-0x06566,0x0d4a0,0x0ea50,0x06e95,0x05ad0,0x02b60,0x186e3,0x092e0,0x1c8d7,0x0c950,
-0x0d4a0,0x1d8a6,0x0b550,0x056a0,0x1a5b4,0x025d0,0x092d0,0x0d2b2,0x0a950,0x0b557,
-0x06ca0,0x0b550,0x15355,0x04da0,0x0a5b0,0x14573,0x052b0,0x0a9a8,0x0e950,0x06aa0,
-0x0aea6,0x0ab50,0x04b60,0x0aae4,0x0a570,0x05260,0x0f263,0x0d950,0x05b57,0x056a0,
-0x096d0,0x04dd5,0x04ad0,0x0a4d0,0x0d4d4,0x0d250,0x0d558,0x0b540,0x0b5a0,0x195a6,
-0x095b0,0x049b0,0x0a974,0x0a4b0,0x0b27a,0x06a50,0x06d40,0x0af46,0x0ab60,0x09570,
-0x04af5,0x04970,0x064b0,0x074a3,0x0ea50,0x06b58,0x05ac0,0x0ab60,0x096d5,0x092e0,
-0x0c960,0x0d954,0x0d4a0,0x0da50,0x07552,0x056a0,0x0abb7,0x025d0,0x092d0,0x0cab5,
-0x0a950,0x0b4a0,0x0baa4,0x0ad50,0x055d9,0x04ba0,0x0a5b0,0x15176,0x052b0,0x0a930,
-0x07954,0x06aa0,0x0ad50,0x05b52,0x04b60,0x0a6e6,0x0a4e0,0x0d260,0x0ea65,0x0d530,
-0x05aa0,0x076a3,0x096d0,0x04bd7,0x04ad0,0x0a4d0,0x1d0b6,0x0d250,0x0d520,0x0dd45,
-0x0b5a0,0x056d0,0x055b2,0x049b0,0x0a577,0x0a4b0,0x0aa50,0x1b255,0x06d20,0x0ada0];
+/* =====（農曆演算法維持原本）===== */
+// lunarInfo 與 getLunar() 函式保持你現有版本不變
 
-function getLunar(date){let base=new Date(1900,0,31),off=(date-base)/86400000,i=1900,t=0;
-for(;i<2101&&off>0;i++){t=lYearDays(i);off-=t;}if(off<0){off+=t;i--;}
-let y=i,leap=leapMonth(i),isLeap=false;
-for(i=1;i<13&&off>0;i++){if(leap>0&&i==(leap+1)&&!isLeap){--i;isLeap=true;t=leapDays(y);}else{t=monthDays(y,i);}
-if(isLeap&&i==(leap+1))isLeap=false;off-=t;}
-if(off==0&&leap>0&&i==leap+1)if(isLeap){isLeap=false;}else{isLeap=true;--i;}
-if(off<0){off+=t;--i;}return{month:i,day:off+1};}
-function lYearDays(y){let s=348;for(let i=0x8000;i>0x8;i>>=1)s+=(lunarInfo[y-1900]&i)?1:0;return s+leapDays(y);}
-function leapDays(y){return leapMonth(y)?((lunarInfo[y-1900]&0x10000)?30:29):0;}
-function leapMonth(y){return lunarInfo[y-1900]&0xf;}
-function monthDays(y,m){return(lunarInfo[y-1900]&(0x10000>>m))?30:29;}
-
-function formatTodayLine(d){const w=["星期日","星期一","星期二","星期三","星期四","星期五","星期六"];
-return `${d.getFullYear()}年 ${d.getMonth()+1}月 ${d.getDate()}日　${w[d.getDay()]}`;}
-
+/* ===== 畫面渲染 ===== */
 function renderCalendar(date){
-const y=date.getFullYear(),m=date.getMonth(),today=new Date();
-document.getElementById("monthYear").textContent=`${y}年 ${m+1}月`;
-document.getElementById("todayLine").textContent="今天："+formatTodayLine(today);
-const box=document.getElementById("calendarDays");box.innerHTML="";
-let first=new Date(y,m,1).getDay(),last=new Date(y,m+1,0).getDate();
-for(let i=0;i<first;i++)box.innerHTML+="<div></div>";
-for(let d=1;d<=last;d++){
-let solar=solarFestivals[`${m+1}-${d}`]||"";
-let lunar=getLunar(new Date(y,m,d));
-let lunarFest=lunarFestivals[`${lunar.month}-${lunar.day}`]||"";
-let lunarText=lunarFest||(lunar.day===1?`${lunar.month}月`:lunarDayNames[lunar.day-1]);
-let cls="day";
-if(d===today.getDate()&&m===today.getMonth()&&y===today.getFullYear())cls+=" today";
-if(solar||lunarFest)cls+=" festival";
-box.innerHTML+=`<div class="${cls}"><div>${d}</div><div class="lunar">${solar||lunarText}</div></div>`;
-}}
-function changeMonth(o){current.setMonth(current.getMonth()+o);renderCalendar(current);}
+  const year=date.getFullYear();
+  const month=date.getMonth();
+  const today=new Date();
+
+  const holidays=getTaiwanHolidays(year);
+
+  document.getElementById("monthYear").textContent=`${year}年 ${month+1}月`;
+  document.getElementById("todayLine").textContent="今天："+formatTodayLine(today);
+
+  const box=document.getElementById("calendarDays");
+  box.innerHTML="";
+
+  let first=new Date(year,month,1).getDay();
+  let last=new Date(year,month+1,0).getDate();
+
+  for(let i=0;i<first;i++) box.innerHTML+="<div></div>";
+
+  for(let d=1;d<=last;d++){
+    const fullDate=`${year}-${month+1}-${d}`;
+    const weekDay=new Date(year,month,d).getDay();
+
+    let cls="day";
+    let isHoliday=holidays[fullDate];
+    let isWeekend=(weekDay===0||weekDay===6);
+
+    if(isHoliday) cls+=" holiday";
+    else if(isWeekend) cls+=" weekend";
+
+    if(d===today.getDate()&&month===today.getMonth()&&year===today.getFullYear())
+      cls+=" today";
+
+    const lunar=getLunar(new Date(year,month,d));
+    const lunarFest=lunarFestivals[`${lunar.month}-${lunar.day}`]||"";
+    const lunarText=lunarFest||(lunar.day===1?`${lunar.month}月`:lunarDayNames[lunar.day-1]);
+
+    box.innerHTML+=`
+      <div class="${cls}">
+        <div>${d}</div>
+        <div class="lunar">${lunarText}</div>
+      </div>`;
+  }
+}
+
+function changeMonth(o){
+  current.setMonth(current.getMonth()+o);
+  renderCalendar(current);
+}
+
 renderCalendar(current);
 </script>
-</body>
-</html>
