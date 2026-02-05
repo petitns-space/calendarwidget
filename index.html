@@ -6,7 +6,6 @@
     <title>Petit n Custom Calendar</title>
     <style>
         :root {
-            /* 💡 在這裡修改色彩設定 */
             --header-bg: #E6B8B8;
             --header-text: #ffffff;
             --week-bg: #FDF2F2;
@@ -27,7 +26,7 @@
             background: transparent;
         }
 
-        /* 月曆容器 - 設定容器查詢以便內部元素響應式 */
+        /* 月曆容器 - 完整響應式 */
         .calendar-container { 
             width: 100%;
             max-width: 500px;
@@ -35,15 +34,124 @@
             border-radius: 16px;
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
             overflow: hidden;
-            container-type: inline-size; /* 核心：允許內容根據容器寬度縮放 */
+            container-type: inline-size;
+            position: relative;
         }
 
-        /* 月份表頭 - 響應式優化 */
+        /* 設定按鈕 - 完全響應式 */
+        .settings-btn {
+            position: absolute;
+            top: clamp(12px, 3cqw, 20px);
+            right: clamp(50px, 12cqw, 70px);
+            background: rgba(255, 255, 255, 0.25);
+            border: none;
+            border-radius: 50%;
+            width: clamp(28px, 6cqw, 36px);
+            height: clamp(28px, 6cqw, 36px);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(0.8rem, 3.5cqw, 1.2rem);
+            transition: all 0.3s;
+            z-index: 10;
+        }
+
+        .settings-btn:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: rotate(90deg);
+        }
+
+        /* 設定面板 - 響應式 */
+        .settings-panel {
+            position: absolute;
+            top: clamp(12px, 3cqw, 20px);
+            right: clamp(12px, 3cqw, 20px);
+            background: white;
+            border-radius: clamp(8px, 2cqw, 12px);
+            padding: clamp(12px, 3cqw, 15px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            z-index: 100;
+            min-width: clamp(180px, 40cqw, 220px);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+        }
+
+        .settings-panel.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .settings-title {
+            font-size: clamp(0.8rem, 3cqw, 0.95rem);
+            font-weight: 700;
+            margin-bottom: clamp(10px, 2.5cqw, 12px);
+            color: #374151;
+            display: flex;
+            align-items: center;
+            gap: clamp(4px, 1cqw, 6px);
+        }
+
+        .color-picker-wrapper {
+            display: flex;
+            align-items: center;
+            gap: clamp(8px, 2cqw, 10px);
+            margin-bottom: clamp(8px, 2cqw, 10px);
+        }
+
+        .color-picker-wrapper label {
+            font-size: clamp(0.75rem, 2.5cqw, 0.85rem);
+            color: #6b7280;
+            flex: 1;
+        }
+
+        .color-picker-wrapper input[type="color"] {
+            width: clamp(38px, 9cqw, 45px);
+            height: clamp(30px, 7cqw, 35px);
+            border: 2px solid #e5e7eb;
+            border-radius: clamp(4px, 1.2cqw, 6px);
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .color-picker-wrapper input[type="color"]:hover {
+            border-color: #9ca3af;
+        }
+
+        .settings-buttons {
+            display: flex;
+            gap: clamp(6px, 1.5cqw, 8px);
+            margin-top: clamp(10px, 2.5cqw, 12px);
+        }
+
+        .settings-buttons button {
+            flex: 1;
+            padding: clamp(5px, 1.5cqw, 6px) clamp(10px, 2.5cqw, 12px);
+            border: 1px solid #d1d5db;
+            border-radius: clamp(4px, 1.2cqw, 6px);
+            font-size: clamp(0.7rem, 2.5cqw, 0.8rem);
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .settings-buttons button:hover {
+            background: #f3f4f6;
+        }
+
+        .settings-buttons .close-btn {
+            background: #f3f4f6;
+        }
+
+        /* 表頭 - 完全響應式 */
         .header { 
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 4cqi 5cqi; /* 使用 cqi 單位讓間距隨寬度變動 */
+            padding: clamp(12px, 3cqw, 20px);
             background: var(--header-bg);
             color: var(--header-text);
         }
@@ -53,87 +161,191 @@
             border: none;
             border-radius: 50%;
             cursor: pointer;
-            width: 32px;
-            height: 32px;
+            width: clamp(28px, 6cqw, 36px);
+            height: clamp(28px, 6cqw, 36px);
             color: var(--header-text);
+            font-size: clamp(0.9rem, 3.5cqw, 1.2rem);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 16px;
+            transition: background 0.2s;
         }
 
-        /* 關鍵：月份字體隨容器寬度自動縮放 */
-        #monthYear { 
-            font-weight: 800; 
-            /* clamp(最小值, 理想比例值, 最大值) */
-            font-size: clamp(1.1rem, 6cqi, 1.8rem); 
-            letter-spacing: 1px;
-            white-space: nowrap;
+        .header button:hover {
+            background: rgba(255, 255, 255, 0.3);
         }
 
+        #monthYear {
+            font-weight: 800;
+            font-size: clamp(0.95rem, 4.5cqw, 1.4rem);
+            letter-spacing: 0.5px;
+        }
+
+        /* 今日資訊 - 響應式 */
         #todayLine { 
-            font-size: clamp(0.75rem, 3.5cqi, 0.95rem);
-            padding: 10px 0;
-            text-align: center; 
+            font-size: clamp(0.7rem, 2.8cqw, 0.9rem);
+            padding: clamp(8px, 2.5cqw, 12px);
+            text-align: center;
             color: #6b7280;
-            background: #ffffff;
             border-bottom: 1px solid #f3f4f6;
         }
 
+        /* 星期列 - 響應式 */
         .week-header {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
             text-align: center;
             font-weight: 700;
-            font-size: clamp(0.7rem, 3cqi, 0.85rem);
-            padding: 8px 0;
+            font-size: clamp(0.65rem, 2.5cqw, 0.85rem);
+            padding: clamp(6px, 2cqw, 10px) 0;
             background: var(--week-bg);
             color: #4b5563;
         }
 
+        /* 日期網格 - 響應式 */
         .days-grid { 
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 1px;
-            padding: 8px;
+            gap: clamp(1px, 0.3cqw, 2px);
+            padding: clamp(4px, 2cqw, 10px);
             background: #f9fafb;
         }
 
         .day { 
             background: #fff;
-            aspect-ratio: 1 / 1.1;
+            aspect-ratio: 1/1.1;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            border-radius: 4px;
+            border-radius: clamp(3px, 1cqw, 6px);
+            padding: clamp(2px, 1cqw, 4px);
+            transition: transform 0.2s, box-shadow 0.2s;
         }
 
+        .day:not(:empty):hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 日期數字 - 完全響應式 */
         .day-num {
-            font-size: clamp(0.9rem, 4cqi, 1.1rem);
+            font-size: clamp(0.8rem, 3.5cqw, 1.15rem);
             font-weight: 500;
+            line-height: 1.2;
         }
 
-        .lunar { 
-            font-size: clamp(0.5rem, 2.5cqi, 0.7rem); 
+        /* 農曆文字 - 完全響應式 */
+        .lunar {
+            font-size: clamp(0.5rem, 2cqw, 0.72rem);
             color: #9ca3af;
-            margin-top: 2px;
-            transform: scale(0.9); /* 防止極小螢幕下重疊 */
+            margin-top: clamp(1px, 0.5cqw, 3px);
+            text-align: center;
+            line-height: 1.1;
+            white-space: nowrap;
         }
-        
+
+        /* 今日樣式 */
         .today { 
-            background: var(--today-bg); 
-            box-shadow: inset 0 0 0 1.5px var(--today-border);
+            background: var(--today-bg);
+            box-shadow: inset 0 0 0 clamp(1.5px, 0.5cqw, 2px) var(--today-border);
             font-weight: bold;
         }
 
-        .holiday, .weekend { color: var(--weekend-text); }
-        .day:empty { background: transparent; }
+        .today .day-num {
+            font-weight: 700;
+        }
+
+        .today:hover {
+            box-shadow: inset 0 0 0 clamp(1.5px, 0.5cqw, 2px) var(--today-border),
+                        0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .holiday, .weekend {
+            color: var(--weekend-text);
+        }
+
+        .day:empty {
+            background: transparent;
+        }
+
+        /* 極小容器優化 */
+        @container (max-width: 280px) {
+            .lunar {
+                font-size: clamp(0.45rem, 1.8cqw, 0.55rem);
+            }
+
+            .day {
+                aspect-ratio: 1/1;
+            }
+
+            .day-num {
+                font-size: clamp(0.75rem, 3.2cqw, 0.9rem);
+            }
+        }
+
+        /* 超大容器優化 */
+        @container (min-width: 480px) {
+            .day-num {
+                font-size: clamp(1.05rem, 3.5cqw, 1.2rem);
+            }
+
+            .lunar {
+                font-size: clamp(0.68rem, 2cqw, 0.75rem);
+            }
+        }
+
+        /* 小螢幕優化 */
+        @media (max-width: 400px) {
+            body {
+                padding: 5px;
+            }
+
+            .calendar-container {
+                border-radius: 12px;
+            }
+
+            .settings-panel {
+                right: 5px;
+                top: 5px;
+            }
+        }
+
+        /* 超小螢幕 - 進一步縮小文字 */
+        @media (max-width: 320px) {
+            #monthYear {
+                font-size: clamp(0.85rem, 4cqw, 1rem);
+            }
+
+            #todayLine {
+                font-size: clamp(0.65rem, 2.5cqw, 0.75rem);
+            }
+        }
     </style>
 </head>
 <body>
 
+<!-- 月曆主體 -->
 <div class="calendar-container">
+    <!-- 設定按鈕 -->
+    <button class="settings-btn" onclick="toggleSettings()">⚙️</button>
+
+    <!-- 設定面板 -->
+    <div class="settings-panel" id="settingsPanel">
+        <div class="settings-title">
+            🎨 自訂主題色
+        </div>
+        <div class="color-picker-wrapper">
+            <label for="mainColor">主題色</label>
+            <input type="color" id="mainColor" value="#E6B8B8">
+        </div>
+        <div class="settings-buttons">
+            <button onclick="resetTheme()">重置</button>
+            <button class="close-btn" onclick="toggleSettings()">完成</button>
+        </div>
+    </div>
+
+    <!-- 月曆表頭 -->
     <div class="header">
         <button onclick="changeMonth(-1)">❮</button>
         <div id="monthYear"></div>
@@ -141,88 +353,235 @@
     </div>
     <div id="todayLine"></div>
     <div class="week-header">
-        <div class="weekend">日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div class="weekend">六</div>
+        <div class="weekend">日</div>
+        <div>一</div>
+        <div>二</div>
+        <div>三</div>
+        <div>四</div>
+        <div>五</div>
+        <div class="weekend">六</div>
     </div>
     <div id="calendarDays" class="days-grid"></div>
 </div>
 
 <script>
-    let current = new Date();
+/* =========================================
+   色彩計算與管理
+   ========================================= */
+const DEFAULT_COLOR = "#E6B8B8";
 
-    function getTaiwanHolidays(year) {
-        return {
-            [`${year}-1-1`]: "元旦",
-            [`${year}-2-28`]: "和平紀念日",
-            [`${year}-4-4`]: "兒童節",
-            [`${year}-10-10`]: "國慶日"
-        };
-    }
+// 將 hex 轉換為 RGB
+function hexToRgb(hex) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+    } : null;
+}
 
-    const lunarFestivals = { "1-1": "春節", "1-15": "元宵", "5-5": "端午", "7-7": "七夕", "8-15": "中秋", "9-9": "重陽" };
-    const lunarDayNames = ["初一", "初二", "初三", "初四", "初五", "初六", "初七", "初八", "初九", "初十",
-        "十一", "十二", "十三", "十四", "十五", "十六", "十七", "十八", "十九", "二十",
-        "廿一", "廿二", "廿三", "廿四", "廿五", "廿六", "廿七", "廿八", "廿九", "三十"];
+// 將 RGB 轉換為 hex
+function rgbToHex(r, g, b) {
+    return "#" + [r, g, b].map(x => {
+        const hex = Math.round(x).toString(16);
+        return hex.length === 1 ? "0" + hex : hex;
+    }).join("");
+}
 
-    function getLunar(date) {
-        return { month: 1, day: (date.getDate() % 30) || 30 };
-    }
+// 生成淺色版本（用於星期列和今天背景）
+function getLighterShade(hex, lightness) {
+    const rgb = hexToRgb(hex);
+    if (!rgb) return hex;
+    
+    // 將顏色向白色混合
+    const r = rgb.r + (255 - rgb.r) * lightness;
+    const g = rgb.g + (255 - rgb.g) * lightness;
+    const b = rgb.b + (255 - rgb.b) * lightness;
+    
+    return rgbToHex(r, g, b);
+}
 
-    function formatTodayLine(date) {
-        const weeks = ["日", "一", "二", "三", "四", "五", "六"];
-        return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 (星期${weeks[date.getDay()]})`;
-    }
+// 判斷顏色深淺，決定文字顏色
+function getContrastColor(hex) {
+    const rgb = hexToRgb(hex);
+    if (!rgb) return "#ffffff";
+    
+    // 計算亮度
+    const brightness = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
+    return brightness > 155 ? "#333333" : "#ffffff";
+}
 
-    function renderCalendar(date) {
-        const year = date.getFullYear();
-        const month = date.getMonth();
-        const today = new Date();
-        const holidays = getTaiwanHolidays(year);
+// 從 localStorage 載入或使用預設值
+function loadMainColor() {
+    return localStorage.getItem('calendarMainColor') || DEFAULT_COLOR;
+}
 
-        document.getElementById("monthYear").textContent = `${year}年 ${month + 1}月`;
-        document.getElementById("todayLine").textContent = "今天：" + formatTodayLine(today);
+// 儲存主題色
+function saveMainColor(color) {
+    localStorage.setItem('calendarMainColor', color);
+}
 
-        const box = document.getElementById("calendarDays");
-        box.innerHTML = "";
+// 套用主題
+function updateTheme(mainColor) {
+    const root = document.documentElement;
+    
+    // 主題色
+    root.style.setProperty('--header-bg', mainColor);
+    
+    // 文字顏色（根據主題色深淺自動調整）
+    const textColor = getContrastColor(mainColor);
+    root.style.setProperty('--header-text', textColor);
+    
+    // 星期列背景（主題色的 90% 淺色）
+    const weekBg = getLighterShade(mainColor, 0.9);
+    root.style.setProperty('--week-bg', weekBg);
+    
+    // 今天背景（主題色的 95% 淺色）
+    const todayBg = getLighterShade(mainColor, 0.95);
+    root.style.setProperty('--today-bg', todayBg);
+    
+    // 今天邊框（與主題色相同）
+    root.style.setProperty('--today-border', mainColor);
+    
+    // 同步到顏色選擇器
+    document.getElementById('mainColor').value = mainColor;
+    
+    // 更新設定按鈕顏色
+    const settingsBtn = document.querySelector('.settings-btn');
+    settingsBtn.style.color = textColor;
+}
 
-        let firstDay = new Date(year, month, 1).getDay();
-        let lastDate = new Date(year, month + 1, 0).getDate();
+// 重置為預設配色
+function resetTheme() {
+    updateTheme(DEFAULT_COLOR);
+    saveMainColor(DEFAULT_COLOR);
+}
 
-        for (let i = 0; i < firstDay; i++) {
-            box.innerHTML += "<div class='day'></div>";
-        }
+// 切換設定面板
+function toggleSettings() {
+    const panel = document.getElementById('settingsPanel');
+    panel.classList.toggle('active');
+}
 
-        for (let d = 1; d <= lastDate; d++) {
-            const fullDate = `${year}-${month + 1}-${d}`;
-            const weekDay = new Date(year, month, d).getDay();
-
-            let cls = "day";
-            if (holidays[fullDate]) cls += " holiday";
-            else if (weekDay === 0 || weekDay === 6) cls += " weekend";
-
-            if (d === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
-                cls += " today";
-            }
-
-            const lunar = getLunar(new Date(year, month, d));
-            const lunarText = lunarFestivals[`${lunar.month}-${lunar.day}`] ||
-                (lunar.day === 1 ? `${lunar.month}月` : lunarDayNames[lunar.day - 1]);
-
-            box.innerHTML += `
-                <div class="${cls}">
-                    <div class="day-num">${d}</div>
-                    <div class="lunar">${lunarText}</div>
-                </div>`;
-        }
-    }
-
-    function changeMonth(offset) {
-        current.setMonth(current.getMonth() + offset);
-        renderCalendar(current);
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-        renderCalendar(current);
+// 監聽顏色變更
+function initColorPicker() {
+    document.getElementById('mainColor').addEventListener('input', (e) => {
+        const color = e.target.value;
+        updateTheme(color);
+        saveMainColor(color);
     });
+}
+
+// 點擊外部關閉設定面板
+document.addEventListener('click', (e) => {
+    const panel = document.getElementById('settingsPanel');
+    const settingsBtn = document.querySelector('.settings-btn');
+    
+    if (!panel.contains(e.target) && !settingsBtn.contains(e.target)) {
+        panel.classList.remove('active');
+    }
+});
+
+let current = new Date();
+
+/* ===== 國定假日 ===== */
+function getTaiwanHolidays(year) {
+    return {
+        [`${year}-1-1`]: "元旦",
+        [`${year}-2-28`]: "和平紀念日",
+        [`${year}-4-4`]: "兒童節",
+        [`${year}-4-5`]: "清明節",
+        [`${year}-10-10`]: "國慶日"
+    };
+}
+
+const lunarFestivals = {
+    "1-1": "春節",
+    "1-15": "元宵",
+    "5-5": "端午",
+    "7-7": "七夕",
+    "8-15": "中秋",
+    "9-9": "重陽"
+};
+
+const lunarDayNames = [
+    "初一", "初二", "初三", "初四", "初五", "初六", "初七", "初八", "初九", "初十",
+    "十一", "十二", "十三", "十四", "十五", "十六", "十七", "十八", "十九", "二十",
+    "廿一", "廿二", "廿三", "廿四", "廿五", "廿六", "廿七", "廿八", "廿九", "三十"
+];
+
+// 農曆轉換 (簡化版)
+function getLunar(date) {
+    const day = date.getDate();
+    const month = date.getMonth() + 1;
+    return {
+        month: month,
+        day: (day % 30) || 30
+    };
+}
+
+function formatTodayLine(date) {
+    const weeks = ["日", "一", "二", "三", "四", "五", "六"];
+    return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 (星期${weeks[date.getDay()]})`;
+}
+
+function renderCalendar(date) {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const today = new Date();
+    const holidays = getTaiwanHolidays(year);
+
+    document.getElementById("monthYear").textContent = `${year}年 ${month + 1}月`;
+    document.getElementById("todayLine").textContent = "今天：" + formatTodayLine(today);
+
+    const box = document.getElementById("calendarDays");
+    box.innerHTML = "";
+
+    let firstDay = new Date(year, month, 1).getDay();
+    let lastDate = new Date(year, month + 1, 0).getDate();
+
+    // 填充空白
+    for (let i = 0; i < firstDay; i++) {
+        box.innerHTML += "<div class='day'></div>";
+    }
+
+    // 填充日期
+    for (let d = 1; d <= lastDate; d++) {
+        const fullDate = `${year}-${month + 1}-${d}`;
+        const weekDay = new Date(year, month, d).getDay();
+
+        let cls = "day";
+        if (holidays[fullDate]) cls += " holiday";
+        else if (weekDay === 0 || weekDay === 6) cls += " weekend";
+
+        if (d === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
+            cls += " today";
+        }
+
+        const lunar = getLunar(new Date(year, month, d));
+        const lunarText = lunarFestivals[`${lunar.month}-${lunar.day}`] ||
+            (lunar.day === 1 ? `${lunar.month}月` : lunarDayNames[lunar.day - 1]);
+
+        box.innerHTML += `
+            <div class="${cls}">
+                <div class="day-num">${d}</div>
+                <div class="lunar">${lunarText}</div>
+            </div>`;
+    }
+}
+
+function changeMonth(offset) {
+    current.setMonth(current.getMonth() + offset);
+    renderCalendar(current);
+}
+
+// 初始化
+document.addEventListener("DOMContentLoaded", () => {
+    const mainColor = loadMainColor();
+    updateTheme(mainColor);
+    initColorPicker();
+    renderCalendar(current);
+});
 </script>
 </body>
 </html>
