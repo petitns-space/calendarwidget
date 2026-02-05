@@ -1,82 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notion Calendar Widget</title>
+    <style>
+        /* 這裡放你的 CSS 樣式，以下為基礎樣式確保正常顯示 */
+        body { font-family: -apple-system, sans-serif; display: flex; justify: center; background: transparent; }
+        .calendar-container { width: 100%; max-width: 350px; background: #fff; border-radius: 8px; padding: 10px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
+        .day { padding: 5px; border-radius: 4px; position: relative; min-height: 40px; }
+        .lunar { font-size: 0.65rem; color: #888; }
+        .today { background: #f0f0f0; font-weight: bold; border: 1px solid #ddd; }
+        .holiday { color: #e74c3c; }
+        .weekend { color: #e74c3c; opacity: 0.8; }
+    </style>
+</head>
+<body>
+
+<div class="calendar-container">
+    <div class="header">
+        <button onclick="changeMonth(-1)">❮</button>
+        <div id="monthYear" style="font-weight: bold;"></div>
+        <button onclick="changeMonth(1)">❯</button>
+    </div>
+    <div id="todayLine" style="font-size: 0.8rem; margin-bottom: 10px; color: #666;"></div>
+    <div class="days-grid" style="font-weight: bold; font-size: 0.8rem; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+        <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
+    </div>
+    <div id="calendarDays" class="days-grid" style="margin-top: 5px;"></div>
+</div>
+
 <script>
 let current = new Date();
 
-/* ===== 台灣國定假日（固定國曆）===== */
+/* ===== 1. 台灣國定假日修正版 ===== */
 function getTaiwanHolidays(year){
+  // 修正語法：動態鍵名必須使用 []
   return {
-    `${year}-1-1`:"元旦",
-    `${year}-2-28`:"和平紀念日",
-    `${year}-4-4`:"兒童節",
-    `${year}-10-10`:"國慶日"
+    [`${year}-1-1`]: "元旦",
+    [`${year}-2-28`]: "和平紀念日",
+    [`${year}-4-4`]: "兒童節",
+    [`${year}-10-10`]: "國慶日"
   };
 }
 
-/* ===== 農曆節日（只顯示，不標紅）===== */
-const lunarFestivals={
-  "1-1":"春節",
-  "1-15":"元宵",
-  "5-5":"端午",
-  "7-7":"七夕",
-  "8-15":"中秋",
-  "9-9":"重陽"
-};
-
-const lunarDayNames=["初一","初二","初三","初四","初五","初六","初七","初八","初九","初十",
+const lunarFestivals = { "1-1":"春節", "1-15":"元宵", "5-5":"端午", "7-7":"七夕", "8-15":"中秋", "9-9":"重陽" };
+const lunarDayNames = ["初一","初二","初三","初四","初五","初六","初七","初八","初九","初十",
 "十一","十二","十三","十四","十五","十六","十七","十八","十九","二十",
 "廿一","廿二","廿三","廿四","廿五","廿六","廿七","廿八","廿九","三十"];
 
-/* =====（農曆演算法維持原本）===== */
-// lunarInfo 與 getLunar() 函式保持你現有版本不變
+/* ===== 2. 農曆轉換邏輯 (補完計畫) ===== */
+function getLunar(date) {
+    // 這裡使用簡易版邏輯模擬，實務上建議載入完整 lunar.js
+    // 為確保程式不報錯，預設回傳。如你有原本的演算法請在此替換
+    return { month: 1, day: date.getDate() % 30 + 1 }; 
+}
 
-/* ===== 畫面渲染 ===== */
+function formatTodayLine(date) {
+    return `${date.getFullYear()}年${date.getMonth()+1}月${date.getDate()}日`;
+}
+
+/* ===== 3. 畫面渲染 ===== */
 function renderCalendar(date){
-  const year=date.getFullYear();
-  const month=date.getMonth();
-  const today=new Date();
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const today = new Date();
+  const holidays = getTaiwanHolidays(year);
 
-  const holidays=getTaiwanHolidays(year);
+  document.getElementById("monthYear").textContent = `${year}年 ${month + 1}月`;
+  document.getElementById("todayLine").textContent = "今天：" + formatTodayLine(today);
 
-  document.getElementById("monthYear").textContent=`${year}年 ${month+1}月`;
-  document.getElementById("todayLine").textContent="今天："+formatTodayLine(today);
+  const box = document.getElementById("calendarDays");
+  box.innerHTML = "";
 
-  const box=document.getElementById("calendarDays");
-  box.innerHTML="";
+  let firstDay = new Date(year, month, 1).getDay();
+  let lastDate = new Date(year, month + 1, 0).getDate();
 
-  let first=new Date(year,month,1).getDay();
-  let last=new Date(year,month+1,0).getDate();
+  for(let i=0; i<firstDay; i++) box.innerHTML += "<div></div>";
 
-  for(let i=0;i<first;i++) box.innerHTML+="<div></div>";
+  for(let d=1; d<=lastDate; d++){
+    const fullDate = `${year}-${month+1}-${d}`;
+    const weekDay = new Date(year, month, d).getDay();
 
-  for(let d=1;d<=last;d++){
-    const fullDate=`${year}-${month+1}-${d}`;
-    const weekDay=new Date(year,month,d).getDay();
+    let cls = "day";
+    let isHoliday = holidays[fullDate];
+    let isWeekend = (weekDay === 0 || weekDay === 6);
 
-    let cls="day";
-    let isHoliday=holidays[fullDate];
-    let isWeekend=(weekDay===0||weekDay===6);
+    if(isHoliday) cls += " holiday";
+    else if(isWeekend) cls += " weekend";
 
-    if(isHoliday) cls+=" holiday";
-    else if(isWeekend) cls+=" weekend";
+    if(d === today.getDate() && month === today.getMonth() && year === today.getFullYear())
+      cls += " today";
 
-    if(d===today.getDate()&&month===today.getMonth()&&year===today.getFullYear())
-      cls+=" today";
+    const lunar = getLunar(new Date(year, month, d));
+    const lunarText = lunarFestivals[`${lunar.month}-${lunar.day}`] || 
+                     (lunar.day === 1 ? `${lunar.month}月` : lunarDayNames[lunar.day-1]);
 
-    const lunar=getLunar(new Date(year,month,d));
-    const lunarFest=lunarFestivals[`${lunar.month}-${lunar.day}`]||"";
-    const lunarText=lunarFest||(lunar.day===1?`${lunar.month}月`:lunarDayNames[lunar.day-1]);
-
-    box.innerHTML+=`
+    box.innerHTML += `
       <div class="${cls}">
-        <div>${d}</div>
+        <div style="font-size: 0.9rem;">${d}</div>
         <div class="lunar">${lunarText}</div>
       </div>`;
   }
 }
 
 function changeMonth(o){
-  current.setMonth(current.getMonth()+o);
+  current.setMonth(current.getMonth() + o);
   renderCalendar(current);
 }
 
-renderCalendar(current);
+// 確保 DOM 載入後執行
+document.addEventListener("DOMContentLoaded", () => {
+    renderCalendar(current);
+});
 </script>
+</body>
+</html>
