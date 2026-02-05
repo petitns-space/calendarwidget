@@ -6,17 +6,20 @@
     <title>Petit n Calendar Widget</title>
     <style>
         :root {
-            --primary-color: #6b7280; /* 優雅的灰藍色 */
-            --header-bg: #f9fafb;     /* 表頭淺色背景 */
-            --weekend-color: #ef4444; /* 假日紅 */
-            --today-bg: #f3f4f6;
+            /* 預設色彩變數 - 你可以在 script 中動態修改這些值 */
+            --header-bg-color: #6b7280; /* 月份表頭背景 */
+            --header-text-color: #ffffff;
+            --week-bg-color: #f3f4f6;   /* 星期列背景 */
+            --weekend-color: #ef4444; 
+            --today-bg: #fdf2f2;
+            --today-border: #fca5a5;
             --text-main: #374151;
         }
 
         body { 
             font-family: -apple-system, "Noto Sans TC", "Microsoft JhengHei", sans-serif; 
             display: flex; 
-            justify: center; 
+            justify-content: center; 
             background: transparent; 
             margin: 0;
             color: var(--text-main);
@@ -26,56 +29,67 @@
             width: 100%; 
             max-width: 350px; 
             background: #fff; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border-radius: 16px; 
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
             overflow: hidden;
-            padding-bottom: 10px;
+            padding-bottom: 12px;
         }
 
-        /* 表頭樣式 */
+        /* 1. 月份表頭樣式 */
         .header { 
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
-            padding: 15px;
-            background: var(--header-bg);
-            border-bottom: 1px solid #eee;
+            padding: 18px 15px;
+            background: var(--header-bg-color); /* 動態色彩 */
+            color: var(--header-text-color);
         }
 
         .header button {
-            background: none;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 50%;
             cursor: pointer;
-            padding: 2px 8px;
-            color: #666;
+            width: 30px;
+            height: 30px;
+            color: var(--header-text-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s;
+        }
+
+        .header button:hover {
+            background: rgba(255, 255, 255, 0.4);
         }
 
         #monthYear { 
-            font-weight: 700; 
-            font-size: 1.1rem;
-            color: var(--primary-color);
+            font-weight: 800; 
+            font-size: 1.2rem;
+            letter-spacing: 1px;
         }
 
-        /* 今天的日期置中 */
+        /* 2. 今天的日期 (置中) */
         #todayLine { 
             font-size: 0.85rem; 
-            padding: 8px 0;
+            padding: 10px 0;
             text-align: center; 
             color: #6b7280;
             background: #ffffff;
+            font-weight: 500;
         }
 
-        /* 星期列色彩 */
+        /* 3. 星期列標題樣式 */
         .week-header {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
             text-align: center;
-            font-weight: 600;
+            font-weight: 700;
             font-size: 0.75rem;
             padding: 8px 0;
-            background: #f3f4f6; /* 星期標題背景色 */
+            background: var(--week-bg-color); /* 動態色彩 */
             color: #4b5563;
+            margin-bottom: 5px;
         }
 
         .days-grid { 
@@ -83,30 +97,34 @@
             grid-template-columns: repeat(7, 1fr); 
             gap: 2px; 
             text-align: center; 
-            padding: 0 5px;
+            padding: 0 8px;
         }
 
         .day { 
-            padding: 8px 0; 
-            border-radius: 6px; 
+            padding: 10px 0; 
+            border-radius: 8px; 
             position: relative; 
-            min-height: 45px; 
+            min-height: 48px; 
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            transition: background 0.2s;
         }
 
-        .lunar { font-size: 0.65rem; color: #9ca3af; margin-top: 2px; }
+        .day:hover { background: #f9fafb; }
+
+        .lunar { font-size: 0.65rem; color: #9ca3af; margin-top: 3px; }
         
+        /* 今日高亮 */
         .today { 
             background: var(--today-bg); 
             font-weight: bold; 
-            outline: 1.5px solid #d1d5db;
+            box-shadow: inset 0 0 0 1.5px var(--today-border);
         }
 
         .holiday, .weekend { color: var(--weekend-color); }
-        .day:empty { background: none; }
+        .day:empty { background: none; pointer-events: none; }
     </style>
 </head>
 <body>
@@ -128,6 +146,25 @@
 </div>
 
 <script>
+/* =========================================
+   色彩設定區：你可以直接修改這裡的顏色
+   ========================================= */
+const THEME_CONFIG = {
+    headerBg: "#4b5563",      // 月份表頭背景 (例如: #4b5563 深灰, #f87171 粉紅)
+    headerText: "#ffffff",    // 月份表頭文字顏色
+    weekHeaderBg: "#f3f4f6",  // 星期列背景顏色
+    todayBg: "#fef2f2"        // 今日高亮背景色
+};
+
+// 套用色彩設定到 CSS 變數
+function applyTheme() {
+    const root = document.documentElement;
+    root.style.setProperty('--header-bg-color', THEME_CONFIG.headerBg);
+    root.style.setProperty('--header-text-color', THEME_CONFIG.headerText);
+    root.style.setProperty('--week-bg-color', THEME_CONFIG.weekHeaderBg);
+    root.style.setProperty('--today-bg', THEME_CONFIG.todayBg);
+}
+
 let current = new Date();
 
 function getTaiwanHolidays(year){
@@ -144,7 +181,7 @@ const lunarDayNames = ["初一","初二","初三","初四","初五","初六","�
 "十一","十二","十三","十四","十五","十六","十七","十八","十九","二十",
 "廿一","廿二","廿三","廿四","廿五","廿六","廿七","廿八","廿九","三十"];
 
-// 模擬農曆邏輯，建議此處保留你原本完整的 getLunar 函式
+// 模擬農曆邏輯（建議保留你原本完整的 getLunar 演算法）
 function getLunar(date) {
     return { month: 1, day: (date.getDate() % 30) || 30 }; 
 }
@@ -174,7 +211,6 @@ function renderCalendar(date){
   let firstDay = new Date(year, month, 1).getDay();
   let lastDate = new Date(year, month + 1, 0).getDate();
 
-  // 填充空白
   for(let i=0; i<firstDay; i++) box.innerHTML += "<div></div>";
 
   for(let d=1; d<=lastDate; d++){
@@ -197,7 +233,7 @@ function renderCalendar(date){
 
     box.innerHTML += `
       <div class="${cls}">
-        <div style="font-size: 0.95rem;">${d}</div>
+        <div style="font-size: 1rem;">${d}</div>
         <div class="lunar">${lunarText}</div>
       </div>`;
   }
@@ -209,6 +245,7 @@ function changeMonth(o){
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+    applyTheme(); // 先執行色彩設定
     renderCalendar(current);
 });
 </script>
